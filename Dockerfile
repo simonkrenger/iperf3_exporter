@@ -7,10 +7,10 @@ RUN microdnf install -y golang git && go get
 # http://blog.wrouesnel.com/articles/Totally%20static%20Go%20builds/
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o iperf3_exporter .
 
-FROM alpine:latest
+FROM registry.fedoraproject.org/fedora-minimal:latest
 LABEL maintainer="Edgard Castro <edgardcastro@gmail.com>, Simon Krenger <simon@krenger.ch>"
 COPY --from=build /go/src/iperf3_exporter/iperf3_exporter /bin/iperf3_exporter
-RUN apk add --no-cache iperf3
+RUN microdnf install -y iperf3
 
 ENTRYPOINT ["/bin/iperf3_exporter"]
 EXPOSE     9579

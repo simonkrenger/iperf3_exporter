@@ -119,6 +119,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		log.Errorf("Failed to run iperf3: %s", err)
 		return
 	}
+	log.Infof("%s", out)
 
 	stats := iperfResult{}
 	if err := json.Unmarshal(out, &stats); err != nil {

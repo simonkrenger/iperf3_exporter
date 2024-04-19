@@ -4,20 +4,12 @@ The iPerf3 exporter allows iPerf3 probing of endpoints.
 
 ## Running this software
 
-### From binaries
+### Using the container image
 
-Download the most suitable binary from [the releases tab](https://github.com/edgard/iperf3_exporter/releases).
-
-Then:
-
-    ./iperf3_exporter <flags>
-
-*Note: [iperf3](https://iperf.fr/) binary should also be installed and accessible from the path.*
-
-### Using the docker image
+The container image is available on quay.io:
 
 ```bash
-docker run --rm -d -p 9579:9579 --name iperf3_exporter edgard/iperf3-exporter:latest
+podman run --rm -d -p 9579:9579 --name iperf3_exporter quay.io/simonkrenger/iperf3_exporter:latest
 ```
 
 ### Checking the results
@@ -37,6 +29,8 @@ This can be also be limited by the `iperf3.timeout` command-line flag. If neithe
 
 The iPerf3 exporter needs to be passed the target as a parameter, this can be done with relabelling.
 Optional: pass the port that the target iperf3 server is lisenting on as the "port" parameter.
+Optional: Set the number of parallel client streams to run as the "parallel" parameter.
+
 
 Example config:
 ```yml
@@ -49,6 +43,7 @@ scrape_configs:
         - bar.server
     params:
       port: ['5201']
+      parallel: ['4']
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

@@ -112,11 +112,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
 
-	out, err := exec.CommandContext(ctx, iperfCmd, "-J", "-P", strconv.Itoa(e.parallel), "-t", strconv.FormatFloat(e.period.Seconds(), 'f', 0, 64), "-c", e.target, "-p", strconv.Itoa(e.port)).Output()
+	out, err := exec.CommandContext(ctx, iperfCmd, "-J", "-P", strconv.Itoa(e.parallel), "-t", strconv.FormatFloat(e.period.Seconds(), 'f', 0, 64), "-c", e.target, "-p", strconv.Itoa(e.port)).CombinedOutput()
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.success, prometheus.GaugeValue, 0)
 		iperfErrors.Inc()
-		log.Errorf("Failed to run iperf3: %s", err)
+		log.Errorf("Failed to run iperf3: err=%s, out=%s", err, out)
 		return
 	}
 	log.Infof("%s", out)

@@ -25,6 +25,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
@@ -39,7 +40,7 @@ const (
 var (
 	listenAddress = kingpin.Flag("web.listen-address", "Address to listen on for web interface and telemetry.").Default(":9579").String()
 	metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
-	timeout       = kingpin.Flag("iperf3.timeout", "iperf3 run timeout.").Default("30s").Duration()
+	timeout       = kingpin.Flag("iperf3.timeout", "iperf3 run timeout.").Default("40s").Duration()
 
 	// Metrics about the iperf3 exporter itself.
 	iperfDuration = prometheus.NewSummary(prometheus.SummaryOpts{Name: prometheus.BuildFQName(namespace, "exporter", "duration_seconds"), Help: "Duration of collections by the iperf3 exporter."})
@@ -112,7 +113,21 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ctx, cancel := context.WithTimeout(context.Background(), e.timeout)
 	defer cancel()
 
-	out, err := exec.CommandContext(ctx, iperfCmd, "-J", "-P", strconv.Itoa(e.parallel), "-t", strconv.FormatFloat(e.period.Seconds(), 'f', 0, 64), "-c", e.target, "-p", strconv.Itoa(e.port)).CombinedOutput()
+	out, err := retry.DoWithData(
+		func() ([]byte, error) {
+			output, err := exec.CommandContext(ctx, iperfCmd,
+				"-J",
+				"-P", strconv.Itoa(e.parallel),
+				"-t", strconv.FormatFloat(e.period.Seconds(), 'f', 0, 64),
+				"-c", e.target,
+				"-p", strconv.Itoa(e.port)).CombinedOutput()
+			if err != nil {
+				log.Errorf("Failed to run iperf3, retrying: err=%s, out=%s", err, output)
+				return nil, err
+			}
+			return output, nil
+		},
+		retry.Attempts(3), retry.Delay(10*time.Second))
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.success, prometheus.GaugeValue, 0)
 		iperfErrors.Inc()

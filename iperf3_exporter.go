@@ -127,7 +127,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			}
 			return output, nil
 		},
-		retry.Attempts(3), retry.Delay(10*time.Second))
+		retry.Attempts(3), retry.Delay(15*time.Second))
 	if err != nil {
 		ch <- prometheus.MustNewConstMetric(e.success, prometheus.GaugeValue, 0)
 		iperfErrors.Inc()

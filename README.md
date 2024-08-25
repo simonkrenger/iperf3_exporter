@@ -1,6 +1,7 @@
 # iPerf3 exporter
 
 The iPerf3 exporter allows iPerf3 probing of endpoints.
+This version adds parallelism and retries to <https://github.com/edgard/iperf3_exporter>.
 
 ## Running this software
 

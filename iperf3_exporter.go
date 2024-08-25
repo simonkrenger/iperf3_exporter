@@ -115,7 +115,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	out, err := retry.DoWithData(
 		func() ([]byte, error) {
-			output, err := exec.CommandContext(ctx, iperfCmd,
+			output, err := exec.CommandContext(ctx, "iperf3",
 				"-J",
 				"-P", strconv.Itoa(e.parallel),
 				"-t", strconv.FormatFloat(e.period.Seconds(), 'f', 0, 64),

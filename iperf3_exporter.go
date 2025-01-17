@@ -51,8 +51,9 @@ var (
 type iperfResult struct {
 	End struct {
 		SumSent struct {
-			Seconds float64 `json:"seconds"`
-			Bytes   float64 `json:"bytes"`
+			Seconds     float64 `json:"seconds"`
+			Bytes       float64 `json:"bytes"`
+			Retransmits float64 `json:"retransmits"`
 		} `json:"sum_sent"`
 		SumReceived struct {
 			Seconds float64 `json:"seconds"`
@@ -76,6 +77,7 @@ type Exporter struct {
 	sentBytes       *prometheus.Desc
 	receivedSeconds *prometheus.Desc
 	receivedBytes   *prometheus.Desc
+	retransmits     *prometheus.Desc
 }
 
 // NewExporter returns an initialized Exporter.
@@ -91,6 +93,7 @@ func NewExporter(target string, port int, parallel int, period time.Duration, ti
 		sentBytes:       prometheus.NewDesc(prometheus.BuildFQName(namespace, "", "sent_bytes"), "Total sent bytes.", nil, nil),
 		receivedSeconds: prometheus.NewDesc(prometheus.BuildFQName(namespace, "", "received_seconds"), "Total seconds spent receiving packets.", nil, nil),
 		receivedBytes:   prometheus.NewDesc(prometheus.BuildFQName(namespace, "", "received_bytes"), "Total received bytes.", nil, nil),
+		retransmits:     prometheus.NewDesc(prometheus.BuildFQName(namespace, "", "retransmits"), "Total retransmits", nil, nil),
 	}
 }
 
@@ -102,6 +105,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.sentBytes
 	ch <- e.receivedSeconds
 	ch <- e.receivedBytes
+	ch <- e.retransmits
 }
 
 // Collect probes the configured iperf3 server and delivers them as Prometheus
@@ -149,6 +153,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(e.sentBytes, prometheus.GaugeValue, stats.End.SumSent.Bytes)
 	ch <- prometheus.MustNewConstMetric(e.receivedSeconds, prometheus.GaugeValue, stats.End.SumReceived.Seconds)
 	ch <- prometheus.MustNewConstMetric(e.receivedBytes, prometheus.GaugeValue, stats.End.SumReceived.Bytes)
+	ch <- prometheus.MustNewConstMetric(e.retransmits, prometheus.GaugeValue, stats.End.SumSent.Retransmits)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
